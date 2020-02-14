@@ -48,6 +48,7 @@ class HingeCuts(inkex.Effect):
       # Define options - Must match to the <param> elements in the .inx file
       self.OptionParser.add_option('--unit',action='store',type='string', dest='unit',default='mm',help='units of measurement')
       self.OptionParser.add_option('--cut_length',action='store',type='float', dest='cut_length',default=0,help='length of the cuts for the hinge.')
+      self.OptionParser.add_option('--cut_width',action='store',type='float', dest='cut_width',default=0,help='width of the rectangle to make for each cut.')
       self.OptionParser.add_option('--gap_length',action='store',type='float', dest='gap_length',default=0,help='separation distance between successive hinge cuts.')
       self.OptionParser.add_option('--sep_distance',action='store',type='float', dest='sep_distance',default=0,help='distance between successive lines of hinge cuts.')
 
@@ -56,6 +57,10 @@ class HingeCuts(inkex.Effect):
     unit=self.options.unit
     # starting cut length. Will be adjusted for get an integer number of cuts in the y-direction.
     l = self.unittouu(str(self.options.cut_length) + unit)
+
+    # cut width
+    w = self.unittouu(str(self.options.cut_width) + unit)
+
     # cut separation in the y-direction
     d = self.unittouu(str(self.options.gap_length) + unit)
     # starting separation between lines of cuts in the x-direction. Will be adjusted to get an integer
@@ -76,7 +81,7 @@ class HingeCuts(inkex.Effect):
         dy = float(node.get("height"))
         
         # calculate the cut lines for the hinge
-        lines, l_actual, d_actual, dd_actual = self.calcCutLines(x, y, dx, dy, l, d, dd)
+        lines, l_actual, d_actual, dd_actual = self.calcCutLines(x, y, dx, dy, l, w, d, dd)
 
         # all the lines are one path. Prepare the string that describes the path.
         s = ''
@@ -90,14 +95,16 @@ class HingeCuts(inkex.Effect):
         desc = inkex.etree.SubElement(hinge, inkex.addNS('desc', 'svg'))
         desc.text = "Hinge cut parameters: actual(requested)\n" \
           "cut length: %.2f %s (%.2f %s)\n" \
+          "cut width: %.2f %s (%.2f %s)\n" \
           "gap length: %.2f %s (%.2f %s)\n" \
           "separation distance: %.2f %s (%.2f %s)" % (self.uutounit(l_actual, unit), unit, self.uutounit(l, unit), unit, 
+          						 self.uutounit(w, unit), unit, self.uutounit(w, unit), unit, 
                                  self.uutounit(d_actual, unit), unit, self.uutounit(d, unit), unit,
                                  self.uutounit(dd_actual, unit), unit, self.uutounit(dd, unit), unit)
     else:
       inkex.debug("No rectangle(s) have been selected.")
       
-  def calcCutLines(self, x, y, dx, dy, l, d, dd):
+  def calcCutLines(self, x, y, dx, dy, l, w, d, dd):
     """
     Return a list of cut lines as dicts. Each dict contains the end points for one cut line.
     [{x1, y1, x2, y2}, ... ]
@@ -113,7 +120,12 @@ class HingeCuts(inkex.Effect):
     dd will be adjusted so that there is an integral number of cuts in the x-direction.
     """
     ret = []
-    
+
+    # offset to use in creating cutout rects
+    # dd needs to be bumped up since the rect size will cut into it.
+    offx = w / 2
+    dd += w
+
     # use l as a starting guess. Adjust it so that we get an integer number of cuts in the y-direction
     # First compute the number of cuts in the y-direction using l. This will not in general be an integer.
     p = (dy-d)/(d+l)
@@ -142,7 +154,11 @@ class HingeCuts(inkex.Effect):
         if endy >= dy:
           endy = dy
         # Add the end points of the line
-        ret.append({'x1' : x + currx, 'y1' : y + starty, 'x2': x + currx, 'y2': y + endy})
+        ret.append({'x1' : x + currx - offx, 'y1' : y + starty, 'x2': x + currx - offx, 'y2': y + endy})
+        if offx > 0.01:
+          ret.append({'x1' : x + currx + offx, 'y1' : y + starty, 'x2': x + currx + offx, 'y2': y + endy})
+          ret.append({'x1' : x + currx + offx, 'y1' : y + starty, 'x2': x + currx - offx, 'y2': y +starty})
+          ret.append({'x1' : x + currx + offx, 'y1' : y + endy, 'x2': x + currx - offx, 'y2': y + endy})
         starty = endy + d
         endy = starty + l
         if starty >= dy:
@@ -164,7 +180,11 @@ class HingeCuts(inkex.Effect):
         if endy >= dy:
           endy = dy
         # create a line
-        ret.append({'x1' : x + currx, 'y1' : y + starty, 'x2': x + currx, 'y2': y + endy})
+        ret.append({'x1' : x + currx - offx, 'y1' : y + starty, 'x2': x + currx - offx, 'y2': y + endy})
+        if offx > 0.01:
+          ret.append({'x1' : x + currx + offx, 'y1' : y + starty, 'x2': x + currx + offx, 'y2': y + endy})
+          ret.append({'x1' : x + currx + offx, 'y1' : y + starty, 'x2': x + currx - offx, 'y2': y +starty})
+          ret.append({'x1' : x + currx + offx, 'y1' : y + endy, 'x2': x + currx - offx, 'y2': y + endy})
         starty = endy + d
         endy = starty + l
         if starty >= dy:

@@ -14,11 +14,13 @@
     <_item value="px">px</_item>
   </param>
 
-  <param name="cut_length" type="float" precision="2"  _gui-text="cut length (y)" min="1" max="1000">19.0</param>
-  <param name="gap_length" type="float" precision="2" _gui-text="gap length (y)" min="1" max="1000">3.0</param> 
-  <param name="sep_distance" type="float" precision="2" _gui-text="separation distance (x)" min="1" max="1000">1.5</param>
+  <param name="cut_length" type="float" precision="2"  _gui-text="cut length (y)" min="0.01" max="1000">19.0</param>
+  <param name="cut_width" type="float" precision="2" _gui-text="cut width (x)" min="0.00" max="1000">0.5</param>
+  <param name="gap_length" type="float" precision="2" _gui-text="gap length (y)" min="0.01" max="1000">3.0</param> 
+  <param name="sep_distance" type="float" precision="2" _gui-text="separation distance (x)" min="0.01" max="1000">1.5</param>
   <param name="help_text" type="description">This extension renders the lines to make the cuts for a living hinge. The cuts run in the y-direction. 
 cut length: the length of each cut in the y-direction. 
+cut width: If cut width is non-zero rectangles of the specified width are cut instead of lines
 gap length: the separation between cut lines in the y-direction. 
 separation distance: the separation distance in the x-direction between adjacent sets of cut lines. 
 The entered value for cut length will be adjusted so that an integer number of whole cut lines lies in the y-direction. The entered value for separation distance will be adjusted so that in integer number of cut lines lies in the x-direction.
